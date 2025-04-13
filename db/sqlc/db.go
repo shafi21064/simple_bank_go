@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.28.0
 
-package simplebank
+package db
 
 import (
 	"context"

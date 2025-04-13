@@ -18,5 +18,8 @@ sqlcinit:
 
 sqlc:
 	docker run --rm -v "${shell cd}:/src" -w /src sqlc/sqlc generate
+
+test:
+	go test -v -cover ./...
  
-.PHONY: postgres createdb dropdb migrateup migratedown sqlcinit sqlc
+.PHONY: postgres createdb dropdb migrateup migratedown sqlcinit sqlcn test

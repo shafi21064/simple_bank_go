@@ -28,12 +28,3 @@ RETURNING *;
 -- name: DeleteTransfer :exec
 DELETE FROM transfers
 WHERE from_account_id = $1 OR to_account_id = $1;
-
-
-CREATE TABLE "transfers" (
-  "id" bigserial PRIMARY KEY,
-  "from_account_id" bigint,
-  "to_account_id" bigint,
-  "amount" bigint NOT NULL,
-  "created_at" timestamptz NOT NULL DEFAULT (now())
-);
