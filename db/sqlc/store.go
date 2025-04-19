@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shafi21064/simplebank/util"
 )
 
 // store provide all functions to execute SQL queries and transactions
@@ -26,9 +27,8 @@ func NewStore(db *pgxpool.Pool) *Store {
 
 func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := store.db.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
-	}
+
+	util.CheckError("begin tx:", err)
 
 	q := New(tx)
 	err = fn(q)
@@ -73,31 +73,72 @@ func (strore *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Tran
 			Amount:        arg.Amount,
 		})
 
-		if err != nil {
-			return err
-		}
+		util.CheckError("create transfer error:", err)
 
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountId,
 			Amount:    -arg.Amount,
 		})
 
-		if err != nil {
-			return err
-		}
+		util.CheckError("", err)
 
 		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.ToAccountId,
 			Amount:    arg.Amount,
 		})
 
-		if err != nil {
-			return err
+		util.CheckError("", err)
+
+		// update accounts balance
+
+		result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.FromAccountId.Int64,
+			Amount: -arg.Amount,
+		})
+
+		util.CheckError("", err)
+
+		result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.ToAccountId.Int64,
+			Amount: arg.Amount,
+		})
+
+		util.CheckError("", err)
+
+		if arg.FromAccountId.Int64 < arg.ToAccountId.Int64 {
+			result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountId.Int64, -arg.Amount, arg.ToAccountId.Int64, arg.Amount)
+		} else {
+			result.ToAccount, result.ToAccount, err = addMoney(ctx, q, arg.ToAccountId.Int64, arg.Amount, arg.FromAccountId.Int64, -arg.Amount)
 		}
 
-		//TODO: update accounts balance
 		return nil
 	})
 
 	return result, err
+}
+
+func addMoney(
+	ctx context.Context,
+	q *Queries,
+	accountID1 int64,
+	ammount1 int64,
+	accountID2 int64,
+	ammount2 int64) (account1 Account,
+	account2 Account,
+	err error) {
+	account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		ID:     accountID1,
+		Amount: ammount1,
+	})
+	if err != nil {
+		return
+	}
+	account2, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		ID:     accountID2,
+		Amount: ammount2,
+	})
+	if err != nil {
+		return
+	}
+	return
 }
