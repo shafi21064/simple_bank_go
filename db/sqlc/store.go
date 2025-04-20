@@ -67,6 +67,7 @@ func (strore *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Tran
 	err := strore.execTx(ctx, func(q *Queries) error {
 		var err error
 
+		//create transfer
 		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
 			FromAccountID: arg.FromAccountId,
 			ToAccountID:   arg.ToAccountId,
@@ -75,41 +76,30 @@ func (strore *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Tran
 
 		util.CheckError("create transfer error:", err)
 
+		// create entries
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountId,
 			Amount:    -arg.Amount,
 		})
 
-		util.CheckError("", err)
+		util.CheckError("create fromEntry error:", err)
 
 		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.ToAccountId,
 			Amount:    arg.Amount,
 		})
 
-		util.CheckError("", err)
+		util.CheckError("create toEntry error:", err)
 
 		// update accounts balance
-
-		result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-			ID:     arg.FromAccountId.Int64,
-			Amount: -arg.Amount,
-		})
-
-		util.CheckError("", err)
-
-		result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-			ID:     arg.ToAccountId.Int64,
-			Amount: arg.Amount,
-		})
-
-		util.CheckError("", err)
 
 		if arg.FromAccountId.Int64 < arg.ToAccountId.Int64 {
 			result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountId.Int64, -arg.Amount, arg.ToAccountId.Int64, arg.Amount)
 		} else {
 			result.ToAccount, result.ToAccount, err = addMoney(ctx, q, arg.ToAccountId.Int64, arg.Amount, arg.FromAccountId.Int64, -arg.Amount)
 		}
+
+		util.CheckError("", err)
 
 		return nil
 	})
