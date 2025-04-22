@@ -28,6 +28,13 @@ func NewServer(store *db.Store) *Server {
 		})
 	})
 
+	router.POST("/api/account", server.createAccount)
+	router.GET("/api/account/:id", server.getAccount)
+
 	server.router = router
 	return server
+}
+
+func errorResponse(err error) *gin.H {
+	return &gin.H{"error": err.Error()}
 }

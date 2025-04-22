@@ -21,5 +21,8 @@ sqlc:
 
 test:
 	go test -v -cover ./...
+
+build:
+	go build .
  
-.PHONY: postgres createdb dropdb migrateup migratedown sqlcinit sqlcn test
+.PHONY: postgres createdb dropdb migrateup migratedown sqlcinit sqlcn test build
