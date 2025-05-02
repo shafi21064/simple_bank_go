@@ -2,7 +2,7 @@ package util
 
 const (
 	USD = "USD"
-	TK  = "Tk"
+	TK  = "TK"
 	EUR = "EUR"
 	CAD = "CAD"
 )
